@@ -33,6 +33,7 @@ export function createStudio(data: HomeData) {
   let disposed = false;
   let refreshing = false;
   let queued = false;
+  let queuedForce = false;
   async function load(area: string, action: () => Promise<void>) {
     try { await action(); errors.value[area] = undefined; }
     catch (error) { if (!disposed) errors.value[area] = errorMessage(error); }
@@ -60,12 +61,12 @@ export function createStudio(data: HomeData) {
       }
     });
   }
-  async function refresh() {
-    if (refreshing) { queued = true; return; }
+  async function refresh(force = false) {
+    if (refreshing) { queued = true; queuedForce ||= force; return; }
     refreshing = true;
     loading.value = true;
-    try { await Promise.all([refreshInfo(), refreshProviders(), refreshVoices(), refreshConfig()]); }
-    finally { refreshing = false; loading.value = false; if (queued && !disposed) { queued = false; void refresh(); } }
+    try { await Promise.all([refreshInfo(), refreshProviders(), refreshVoices(), refreshConfig(force)]); }
+    finally { refreshing = false; loading.value = false; if (queued && !disposed) { queued = false; const nextForce = queuedForce; queuedForce = false; void refresh(nextForce); } }
   }
   async function saveSetting(path: string, value: Json) {
     await api.patchConfig(nestedChange(path, value), config.value?.revision);
