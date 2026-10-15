@@ -16,6 +16,33 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  frontend:
+    name: Vue components, workflows and accessibility
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run build && npm test
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - run: npm run test:e2e -- e2e/studio.spec.ts
+        working-directory: frontend
+      - name: Upload UI screenshots, traces and report
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: ui-verification
+          path: |
+            frontend/test-results
+            frontend/playwright-report
+
   validate:
     name: Format, Lint, Test, Audit
     runs-on: ubuntu-24.04
@@ -173,6 +200,26 @@ jobs:
 
       - name: Test (headless server)
         run: cargo test --locked --no-default-features --features server
+
+      - name: Install browser test dependencies
+        working-directory: frontend
+        run: npm ci && npx playwright install --with-deps chromium
+
+      - name: Verify production embedded UI, CSP and sessions
+        working-directory: frontend
+        env:
+          SONICBOOM_TEST_BINARY: ${{ github.workspace }}/target/release/SonicBoom
+        run: npm run test:e2e -- e2e/embedded.spec.ts
+
+      - name: Upload embedded UI verification artifacts
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: embedded-ui-verification
+          path: |
+            frontend/test-results
+            frontend/playwright-report
+
 
   # Linux-compatible feature combinations beyond default/headless.
   feature-matrix:

@@ -45,6 +45,15 @@ keyboard navigation, all-panel axe audits, palette and native-control contrast).
 
 ## Phase 5
 
-Production Rust embedding/CSP/session verification and CI integration follow in
-the dependent quality PR. These screenshots use deterministic API fixtures;
-real model-backed synthesis is separate from UI protocol and accessibility tests.
+- Component/service tests and browser flows are integrated into CI.
+- Browser audits cover EN/ES, all studio panels, setup/admin, keyboard navigation,
+  320–1440px layouts, live system theme changes and semantic/native contrast.
+- Production tests copy the release executable into an isolated directory and
+  exercise embedded assets, strict CSP, setup, sessions, CSRF and token lifecycle.
+- Headless Rust tests, formatting and Clippy complement the frontend checks.
+- Delivery is split into visual-system, Vue-workflow and quality PRs, with the
+  screenshots above documenting each stage.
+
+See [frontend quality commands](../frontend.md#quality-checks) for reproduction.
+Fixture synthesis exercises the UI protocol; real model inference performance
+is outside these tests.

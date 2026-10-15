@@ -122,3 +122,31 @@ The UI uses the English catalog as a fallback for future untranslated messages.
 No frontend code outside `services/http.ts` calls `fetch`. Theme colors are
 semantic variables in `styles/tokens.css`; `prefers-color-scheme` updates all
 pages and native controls immediately. There is no theme override in storage.
+
+## Quality checks
+
+```sh
+npm ci --prefix frontend
+npm run build --prefix frontend
+npm test --prefix frontend
+cd frontend
+npx playwright install chromium
+npm run test:e2e -- e2e/studio.spec.ts
+```
+
+The component/service suite checks typed settings, HTTP authentication, Vue
+navigation, retained drafts and job recovery. Browser fixtures cover EN/ES,
+generation, cancellation, cloning, settings, responsive layouts, keyboard focus,
+contrast and axe audits across light/dark studio, setup and admin pages.
+
+To exercise the actual embedded production frontend:
+
+```sh
+cargo build --release --locked --no-default-features --features server
+SONICBOOM_TEST_BINARY="$PWD/target/release/SonicBoom" npm run test:e2e --prefix frontend -- e2e/embedded.spec.ts
+```
+
+These tests copy the executable to an isolated directory without frontend
+sources and check real setup, admin sessions, CSRF, token creation/revocation,
+strict CSP and immutable assets. They do not download models or benchmark
+inference. CI runs both browser suites and retains reports and screenshots.
